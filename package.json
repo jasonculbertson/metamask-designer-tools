@@ -23,8 +23,11 @@
           ]
         }
       ],
-      "hardenedRuntime": false,
-      "gatekeeperAssess": false
+      "hardenedRuntime": true,
+      "gatekeeperAssess": false,
+      "notarize": {
+        "teamId": "2WRVG46HV2"
+      }
     },
     "dmg": {
       "title": "MetaMask Designer Tools",
