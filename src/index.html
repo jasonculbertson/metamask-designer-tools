@@ -501,6 +501,201 @@
       height: 80px;
       margin-top: 4px;
     }
+
+    /* ── Branch guard banner ── */
+    .branch-guard {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      padding: 12px 16px;
+      background: #ff444411;
+      border: 1px solid #ff444433;
+      border-radius: 10px;
+      margin-bottom: 12px;
+      font-size: 13px;
+      color: #ff7777;
+    }
+
+    .branch-guard.visible { display: flex; }
+    .branch-guard-text { flex: 1; line-height: 1.4; }
+    .branch-guard-icon { font-size: 18px; flex-shrink: 0; }
+
+    /* ── Update branch notice ── */
+    .update-branch-notice {
+      display: none;
+      align-items: center;
+      gap: 10px;
+      padding: 10px 14px;
+      background: #f6851b11;
+      border: 1px solid #f6851b33;
+      border-radius: 8px;
+      font-size: 12px;
+      color: #f6851b;
+    }
+
+    .update-branch-notice.visible { display: flex; }
+    .update-branch-notice span { flex: 1; }
+
+    /* ── Refine AI annotation cards ── */
+    .annotations-section {
+      display: none;
+      flex-direction: column;
+      gap: 8px;
+      margin-bottom: 12px;
+    }
+
+    .annotations-section.visible { display: flex; }
+
+    .annotations-header {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      color: #888;
+    }
+
+    .annotations-header .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #f6851b;
+    }
+
+    .annotation-card {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+      padding: 10px 12px;
+      background: #161616;
+      border: 1px solid #2a2a2a;
+      border-radius: 10px;
+      cursor: pointer;
+      transition: border-color 0.15s;
+      -webkit-app-region: no-drag;
+    }
+
+    .annotation-card:hover { border-color: #3a3a3a; }
+    .annotation-card.selected { border-color: #f6851b; background: #f6851b08; }
+
+    .annotation-check {
+      width: 16px; height: 16px;
+      border-radius: 4px;
+      border: 1.5px solid #333;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      margin-top: 1px;
+      font-size: 10px;
+      transition: all 0.15s;
+    }
+
+    .annotation-card.selected .annotation-check {
+      background: #f6851b;
+      border-color: #f6851b;
+      color: #000;
+    }
+
+    .annotation-body { flex: 1; }
+
+    .annotation-comment {
+      font-size: 13px;
+      color: #ccc;
+      line-height: 1.4;
+    }
+
+    .annotation-meta {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      margin-top: 4px;
+    }
+
+    .annotation-priority {
+      font-size: 10px;
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 4px;
+      text-transform: uppercase;
+      letter-spacing: 0.4px;
+    }
+
+    .annotation-priority.high { background: #ff444422; color: #ff7777; }
+    .annotation-priority.medium { background: #f6851b22; color: #f6851b; }
+    .annotation-priority.low { background: #22c55e22; color: #22c55e; }
+
+    .annotation-file {
+      font-size: 11px;
+      font-family: 'SF Mono', monospace;
+      color: #555;
+    }
+
+    .annotation-route {
+      font-size: 11px;
+      color: #555;
+    }
+
+    .annotation-open-file {
+      font-size: 11px;
+      color: #60a5fa;
+      cursor: pointer;
+      text-decoration: underline;
+      background: none;
+      border: none;
+      padding: 0;
+      -webkit-app-region: no-drag;
+    }
+
+    /* ── Generate button ── */
+    .generate-row {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+
+    .generate-row .key-input { flex: 1; }
+
+    .btn-generate {
+      padding: 10px 14px;
+      border-radius: 10px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: 1px solid #f6851b44;
+      background: #f6851b11;
+      color: #f6851b;
+      white-space: nowrap;
+      flex-shrink: 0;
+      transition: background 0.15s;
+      -webkit-app-region: no-drag;
+    }
+
+    .btn-generate:hover { background: #f6851b22; }
+    .btn-generate:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .pr-description-wrap {
+      display: flex;
+      flex-direction: column;
+      gap: 6px;
+    }
+
+    .pr-description-input {
+      background: #0f0f0f;
+      border: 1px solid #333;
+      border-radius: 10px;
+      color: #888;
+      font-size: 12px;
+      font-family: -apple-system, sans-serif;
+      padding: 10px 14px;
+      outline: none;
+      transition: border-color 0.2s;
+      resize: none;
+      height: 72px;
+      line-height: 1.5;
+    }
+
+    .pr-description-input:focus { border-color: #f6851b; color: #ccc; }
+    .pr-description-input::placeholder { color: #333; }
   </style>
 </head>
 <body>
@@ -680,6 +875,40 @@
     </div>
   </div>
 
+  <!-- ── Screen: Claude API Key (optional) ── -->
+  <div class="screen" id="screen-claude">
+    <div class="input-card">
+      <div>
+        <div class="card-title">✨ Enable AI features</div>
+        <div style="font-size:13px; color:#666; margin-top:4px;">Optional — skip if you don't have a key</div>
+      </div>
+      <div class="card-desc">
+        Add a <strong>Claude API key</strong> to auto-generate commit messages and PR descriptions from your diff and Refine AI annotations. You'll never have to write a commit message manually.
+      </div>
+      <button class="card-link-btn" onclick="openClaudeKeys()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        Get a Claude API key
+      </button>
+      <div class="key-input-wrap">
+        <div class="key-label">Paste your API key here</div>
+        <input
+          class="key-input"
+          id="claude-key-input"
+          type="password"
+          placeholder="sk-ant-xxxxxxxxxxxx"
+          oninput="onClaudeKeyInput()"
+          autocomplete="off"
+          spellcheck="false"
+        />
+      </div>
+      <div id="claude-error" class="error-banner">Invalid API key format.</div>
+    </div>
+    <div class="footer-actions" style="margin-top:16px;">
+      <button class="btn btn-primary" id="claude-continue-btn" disabled onclick="continueWithClaude()">Enable AI features</button>
+      <button class="btn btn-secondary" onclick="skipClaude()">Skip for now</button>
+    </div>
+  </div>
+
   <!-- ── Screen: Launch (Dashboard) ── -->
   <div class="screen" id="screen-launch">
     <div class="launch-hero">
@@ -731,6 +960,24 @@
       <div class="pr-sub">Follow the steps to get your changes into the codebase</div>
     </div>
 
+    <!-- Branch guard banner -->
+    <div class="branch-guard" id="branch-guard">
+      <div class="branch-guard-icon">⚠️</div>
+      <div class="branch-guard-text">
+        You're on <strong>main</strong> — create a branch in Step 2 before opening Cursor, otherwise your changes won't be attached to a PR.
+      </div>
+    </div>
+
+    <!-- Refine AI annotations -->
+    <div class="annotations-section" id="annotations-section">
+      <div class="annotations-header">
+        <div class="dot"></div>
+        <span id="annotations-header-text">Refine AI annotations</span>
+        <span style="font-size:11px; color:#444; font-weight:400; margin-left:auto">Select to include in PR</span>
+      </div>
+      <div id="annotations-list"></div>
+    </div>
+
     <div class="pr-steps">
 
       <!-- Step 1: Sync -->
@@ -743,6 +990,10 @@
         <div class="pr-card-body">
           <div class="pr-desc">Pull the latest changes before you start. Also runs <code style="font-family:SF Mono,monospace;font-size:11px;color:#888">yarn install</code> if dependencies changed.</div>
           <button class="btn btn-secondary btn-sm" id="sync-btn" onclick="doSync()">Sync with main</button>
+          <div class="update-branch-notice" id="update-branch-notice">
+            <span>Your branch is behind main</span>
+            <button class="btn btn-secondary btn-sm" id="update-branch-btn" onclick="doUpdateBranch()" style="padding:6px 12px; font-size:12px">Update branch</button>
+          </div>
           <div class="log-view pr-log" id="sync-log" style="display:none"></div>
         </div>
       </div>
@@ -809,14 +1060,26 @@
           <div class="pr-card-title">Submit PR</div>
         </div>
         <div class="pr-card-body">
-          <div class="pr-desc">Describe what you changed. This becomes your commit message and PR title.</div>
-          <input
-            class="key-input"
-            id="commit-msg-input"
-            placeholder="e.g. Fix button spacing on swap screen"
-            oninput="onCommitInput()"
-            spellcheck="false"
-          />
+          <div class="pr-desc">Describe what you changed. The AI can write this for you based on your diff and Refine AI annotations.</div>
+          <div class="generate-row">
+            <input
+              class="key-input"
+              id="commit-msg-input"
+              placeholder="e.g. Fix button spacing on swap screen"
+              oninput="onCommitInput()"
+              spellcheck="false"
+            />
+            <button class="btn-generate" id="generate-btn" onclick="doGenerate()" title="Generate with Claude AI">✨ Generate</button>
+          </div>
+          <div class="pr-description-wrap" id="pr-description-wrap" style="display:none">
+            <div class="key-label">PR description</div>
+            <textarea
+              class="pr-description-input"
+              id="pr-description-input"
+              placeholder="AI-generated description will appear here..."
+              spellcheck="false"
+            ></textarea>
+          </div>
           <button class="btn btn-primary btn-sm" id="push-btn" onclick="doPushPR()" disabled>Push & Open PR →</button>
           <div class="log-view pr-log" id="submit-log" style="display:none"></div>
         </div>
@@ -843,6 +1106,7 @@ let state = {}
 let currentTab = 'launch'
 let prBranchName = ''
 let prHasSnapshots = false
+let selectedAnnotations = []  // annotations user has selected to include in PR
 
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'))
@@ -967,7 +1231,7 @@ function resetStepUI() {
 async function startSetup() {
   state = await api.getState()
 
-  // Fully set up with GitHub token → dashboard
+  // Fully set up → dashboard
   if (state.setupComplete && state.githubToken) {
     showDashboard('launch')
     return
@@ -1041,7 +1305,7 @@ async function runFullSetup() {
     }
   }
 
-  // After full setup, collect GitHub token
+  // After full setup, collect GitHub token then Claude key
   showScreen('github')
 }
 
@@ -1072,10 +1336,37 @@ async function continueWithGithub() {
   }
 
   state = await api.getState()
-  showDashboard('launch')
+  // Offer Claude key next
+  showScreen('claude')
 }
 
 function skipGithub() {
+  showScreen('claude')
+}
+
+// ── Claude API key ──
+function openClaudeKeys() {
+  api.openUrl('https://console.anthropic.com/settings/keys')
+}
+
+function onClaudeKeyInput() {
+  const val = document.getElementById('claude-key-input').value.trim()
+  document.getElementById('claude-continue-btn').disabled = val.length < 20
+  document.getElementById('claude-error').classList.remove('visible')
+}
+
+async function continueWithClaude() {
+  const key = document.getElementById('claude-key-input').value.trim()
+  const result = await api.runStep('save-claude-key', { key })
+  if (!result.ok) {
+    document.getElementById('claude-error').classList.add('visible')
+    return
+  }
+  state = await api.getState()
+  showDashboard('launch')
+}
+
+function skipClaude() {
   showDashboard('launch')
 }
 
@@ -1106,11 +1397,85 @@ async function doLaunch() {
 }
 
 // ── PR screen init ──
-function initPRScreen() {
+async function initPRScreen() {
   clearError('pr-error')
-  // Pre-fill branch preview if we have username
   state = state || {}
   onBranchInput()
+
+  // Check branch guard
+  const guardResult = await api.runStep('check-branch-guard')
+  if (guardResult.ok && guardResult.data) {
+    const { onMain, behindMain } = guardResult.data
+    document.getElementById('branch-guard').classList.toggle('visible', !!onMain)
+    document.getElementById('update-branch-notice').classList.toggle('visible', !onMain && !!behindMain)
+  }
+
+  // Load Refine AI annotations
+  loadAnnotations()
+}
+
+async function loadAnnotations() {
+  const result = await api.runStep('get-refine-annotations')
+  if (!result.ok || !result.data) return
+
+  const { annotations } = result.data
+  if (!annotations || annotations.length === 0) return
+
+  const section = document.getElementById('annotations-section')
+  const list = document.getElementById('annotations-list')
+  const header = document.getElementById('annotations-header-text')
+
+  header.textContent = `${annotations.length} open annotation${annotations.length !== 1 ? 's' : ''} from Refine AI`
+  list.innerHTML = ''
+  selectedAnnotations = []
+
+  annotations.forEach(a => {
+    const card = document.createElement('div')
+    card.className = 'annotation-card'
+    card.dataset.id = a.id
+
+    const file = a.suggestedFix?.file || a.filePath || null
+    const fileShort = file ? file.split('/').slice(-2).join('/') : null
+
+    card.innerHTML = `
+      <div class="annotation-check" id="check-${a.id}"></div>
+      <div class="annotation-body">
+        <div class="annotation-comment">${escHtml(a.comment || '')}</div>
+        <div class="annotation-meta">
+          <span class="annotation-priority ${a.priority || 'medium'}">${a.priority || 'medium'}</span>
+          ${a.routeName ? `<span class="annotation-route">${escHtml(a.routeName)}</span>` : ''}
+          ${fileShort ? `<button class="annotation-open-file" onclick="openAnnotationFile('${escHtml(file)}', event)">Open ${escHtml(fileShort)} in Cursor →</button>` : ''}
+        </div>
+      </div>
+    `
+
+    card.addEventListener('click', () => toggleAnnotation(a, card))
+    list.appendChild(card)
+  })
+
+  section.classList.add('visible')
+}
+
+function escHtml(str) {
+  return str.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;')
+}
+
+function toggleAnnotation(annotation, card) {
+  const isSelected = card.classList.contains('selected')
+  if (isSelected) {
+    card.classList.remove('selected')
+    document.getElementById('check-' + annotation.id).textContent = ''
+    selectedAnnotations = selectedAnnotations.filter(a => a.id !== annotation.id)
+  } else {
+    card.classList.add('selected')
+    document.getElementById('check-' + annotation.id).textContent = '✓'
+    selectedAnnotations.push(annotation)
+  }
+}
+
+async function openAnnotationFile(file, event) {
+  event.stopPropagation()
+  await api.runStep('open-cursor', { file })
 }
 
 // ── PR Step 1: Sync ──
@@ -1135,6 +1500,33 @@ async function doSync() {
 
   setPRCard('sync', 'done')
   document.getElementById('sync-badge').textContent = '✓ Up to date'
+
+  // After syncing main, re-check if current branch needs updating
+  const guardResult = await api.runStep('check-branch-guard')
+  if (guardResult.ok && guardResult.data) {
+    const { onMain, behindMain } = guardResult.data
+    document.getElementById('update-branch-notice').classList.toggle('visible', !onMain && !!behindMain)
+  }
+}
+
+async function doUpdateBranch() {
+  const btn = document.getElementById('update-branch-btn')
+  btn.disabled = true
+  btn.textContent = 'Updating...'
+  showLog('sync-log')
+  clearError('pr-error')
+
+  const result = await api.runStep('pr-update-branch')
+  btn.disabled = false
+  btn.textContent = 'Update branch'
+
+  if (!result.ok) {
+    showError('pr-error', result.error || 'Update failed')
+    return
+  }
+
+  document.getElementById('update-branch-notice').classList.remove('visible')
+  document.getElementById('sync-badge').textContent = '✓ Branch up to date'
 }
 
 // ── PR Step 2: Branch ──
@@ -1179,6 +1571,14 @@ async function doCreateBranch() {
 
 // ── PR Step 3: Cursor ──
 async function openInCursor() {
+  // Branch guard: warn if still on main
+  const guardResult = await api.runStep('check-branch-guard')
+  if (guardResult.ok && guardResult.data && guardResult.data.onMain) {
+    document.getElementById('branch-guard').classList.add('visible')
+    document.getElementById('branch-guard').scrollIntoView({ behavior: 'smooth' })
+    return
+  }
+
   const result = await api.runStep('check-cursor')
   if (result.data && !result.data.installed) {
     document.getElementById('cursor-missing').style.display = 'block'
@@ -1264,14 +1664,47 @@ async function doUpdateSnapshots() {
   setPRCard('changes', 'done')
 }
 
-// ── PR Step 5: Commit & push ──
+// ── PR Step 5: Generate + Commit & push ──
 function onCommitInput() {
   const val = document.getElementById('commit-msg-input').value.trim()
   document.getElementById('push-btn').disabled = val.length < 3
 }
 
+async function doGenerate() {
+  const btn = document.getElementById('generate-btn')
+  btn.disabled = true
+  btn.textContent = '✨ Generating...'
+  clearError('pr-error')
+
+  const annotationsJson = JSON.stringify(selectedAnnotations)
+  const result = await api.runStep('generate-commit-message', { annotations: annotationsJson })
+
+  btn.disabled = false
+  btn.textContent = '✨ Generate'
+
+  if (!result.ok) {
+    if (result.error && result.error.includes('No Claude API key')) {
+      showError('pr-error', 'No Claude API key set. Add one in Settings or type your message manually.')
+    } else {
+      showError('pr-error', result.error || 'Generation failed')
+    }
+    return
+  }
+
+  if (result.data) {
+    document.getElementById('commit-msg-input').value = result.data.commitMessage || ''
+    onCommitInput()
+
+    if (result.data.prDescription) {
+      document.getElementById('pr-description-wrap').style.display = 'flex'
+      document.getElementById('pr-description-input').value = result.data.prDescription
+    }
+  }
+}
+
 async function doPushPR() {
   const message = document.getElementById('commit-msg-input').value.trim()
+  const prBody = document.getElementById('pr-description-input').value.trim()
   const btn = document.getElementById('push-btn')
   btn.disabled = true
   btn.textContent = 'Pushing...'
@@ -1280,7 +1713,7 @@ async function doPushPR() {
   setPRCard('submit', 'active')
   clearError('pr-error')
 
-  const result = await api.runStep('pr-commit-push', { message })
+  const result = await api.runStep('pr-commit-push', { message, prBody: prBody || undefined })
   btn.disabled = false
   btn.textContent = 'Push & Open PR →'
 
@@ -1308,16 +1741,23 @@ window.openGithubToken = openGithubToken
 window.onGithubTokenInput = onGithubTokenInput
 window.continueWithGithub = continueWithGithub
 window.skipGithub = skipGithub
+window.openClaudeKeys = openClaudeKeys
+window.onClaudeKeyInput = onClaudeKeyInput
+window.continueWithClaude = continueWithClaude
+window.skipClaude = skipClaude
 window.switchTab = switchTab
 window.doLaunch = doLaunch
 window.doSync = doSync
+window.doUpdateBranch = doUpdateBranch
 window.onBranchInput = onBranchInput
 window.doCreateBranch = doCreateBranch
 window.openInCursor = openInCursor
 window.openCursorDownload = openCursorDownload
+window.openAnnotationFile = openAnnotationFile
 window.doScanChanges = doScanChanges
 window.doUpdateSnapshots = doUpdateSnapshots
 window.onCommitInput = onCommitInput
+window.doGenerate = doGenerate
 window.doPushPR = doPushPR
 
 })()

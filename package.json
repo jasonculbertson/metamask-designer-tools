@@ -16,7 +16,12 @@
       "category": "public.app-category.developer-tools",
       "icon": "assets/icon.icns",
       "target": [
-        { "target": "dmg", "arch": ["arm64"] }
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64"
+          ]
+        }
       ],
       "hardenedRuntime": false,
       "gatekeeperAssess": false
@@ -24,10 +29,21 @@
     "dmg": {
       "title": "MetaMask Designer Tools",
       "contents": [
-        { "x": 130, "y": 220 },
-        { "x": 410, "y": 220, "type": "link", "path": "/Applications" }
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
       ],
-      "window": { "width": 540, "height": 400 }
+      "window": {
+        "width": 540,
+        "height": 400
+      }
     },
     "directories": {
       "output": "release"
@@ -40,9 +56,12 @@
     "asar": true
   },
   "devDependencies": {
+    "@types/node": "^20.0.0",
     "electron": "^30.0.0",
     "electron-builder": "^24.0.0",
-    "typescript": "^5.4.0",
-    "@types/node": "^20.0.0"
+    "typescript": "^5.4.0"
+  },
+  "dependencies": {
+    "@anthropic-ai/sdk": "^0.80.0"
   }
 }

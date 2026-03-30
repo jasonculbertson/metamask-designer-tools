@@ -17,6 +17,7 @@ interface State {
   githubToken?: string
   githubUsername?: string
   currentBranch?: string
+  claudeKey?: string
 }
 
 // Async exec that streams stdout/stderr lines to the log
@@ -132,14 +133,19 @@ export class SetupRunner {
         case 'check-refine-ai':      return await this.checkRefineAi()
         case 'launch':               return await this.launch()
         // ── PR steps ──
-        case 'save-github-token':    return await this.saveGithubToken(payload?.token ?? '')
-        case 'check-cursor':         return await this.checkCursor()
-        case 'open-cursor':          return await this.openCursor()
-        case 'pr-sync':              return await this.prSync()
-        case 'pr-create-branch':     return await this.prCreateBranch(payload?.name ?? '')
-        case 'pr-changed-files':     return await this.prChangedFiles()
-        case 'pr-update-snapshots':  return await this.prUpdateSnapshots()
-        case 'pr-commit-push':       return await this.prCommitPush(payload?.message ?? '')
+        case 'save-github-token':       return await this.saveGithubToken(payload?.token ?? '')
+        case 'save-claude-key':         return this.saveClaudeKey(payload?.key ?? '')
+        case 'check-cursor':            return await this.checkCursor()
+        case 'open-cursor':             return await this.openCursor(payload?.file)
+        case 'pr-sync':                 return await this.prSync()
+        case 'pr-create-branch':        return await this.prCreateBranch(payload?.name ?? '')
+        case 'pr-changed-files':        return await this.prChangedFiles()
+        case 'pr-update-snapshots':     return await this.prUpdateSnapshots()
+        case 'pr-commit-push':          return await this.prCommitPush(payload?.message ?? '', payload?.prBody)
+        case 'check-branch-guard':      return await this.checkBranchGuard()
+        case 'pr-update-branch':        return await this.prUpdateBranch()
+        case 'get-refine-annotations':  return await this.getRefineAnnotations()
+        case 'generate-commit-message': return await this.generateCommitMessage(payload?.annotations ?? '')
         default: return { ok: false, error: `Unknown step: ${stepId}` }
       }
     } catch (e: unknown) {
@@ -602,9 +608,21 @@ export class SetupRunner {
     return { ok: true, data: { installed } }
   }
 
-  private async openCursor(): Promise<{ ok: boolean; error?: string }> {
+  private saveClaudeKey(key: string): { ok: boolean; error?: string } {
+    if (!key || key.trim().length < 20) return { ok: false, error: 'Invalid API key' }
+    this.state.claudeKey = key.trim()
+    this.saveState()
+    return { ok: true }
+  }
+
+  private async openCursor(file?: string): Promise<{ ok: boolean; error?: string }> {
     const log = this.log.bind(this)
-    await runShell(`open -a Cursor "${REPO_DIR}" 2>/dev/null || true`, log, undefined, this.env)
+    if (file) {
+      const abs = path.join(REPO_DIR, file)
+      await runShell(`open -a Cursor "${abs}" 2>/dev/null || open -a Cursor "${REPO_DIR}" 2>/dev/null || true`, log, undefined, this.env)
+    } else {
+      await runShell(`open -a Cursor "${REPO_DIR}" 2>/dev/null || true`, log, undefined, this.env)
+    }
     return { ok: true }
   }
 
@@ -737,7 +755,7 @@ export class SetupRunner {
     return { ok: true }
   }
 
-  private async prCommitPush(message: string): Promise<{ ok: boolean; error?: string; data?: unknown }> {
+  private async prCommitPush(message: string, prBody?: string): Promise<{ ok: boolean; error?: string; data?: unknown }> {
     if (!message.trim()) return { ok: false, error: 'Commit message is required' }
 
     const branch = this.state.currentBranch
@@ -754,8 +772,6 @@ export class SetupRunner {
     await runWithLog('git', ['commit', '-m', message], log, { cwd: REPO_DIR, env: this.env })
 
     log(`Pushing to origin/${branch}...`)
-
-    // Inject token into remote URL so git doesn't prompt for credentials
     const remote = token && username
       ? `https://${username}:${token}@github.com/MetaMask/metamask-mobile.git`
       : 'origin'
@@ -763,7 +779,188 @@ export class SetupRunner {
     await runWithLog('git', ['push', remote, branch], log, { cwd: REPO_DIR, env: this.env })
 
     log('Pushed ✓ — opening PR on GitHub...')
-    const prUrl = `https://github.com/MetaMask/metamask-mobile/compare/${branch}?expand=1`
+
+    // Build PR URL — include body if provided
+    const bodyParam = prBody ? `&body=${encodeURIComponent(prBody)}` : ''
+    const prUrl = `https://github.com/MetaMask/metamask-mobile/compare/${branch}?expand=1${bodyParam}`
     return { ok: true, data: { prUrl, branch } }
+  }
+
+  // ─────────────────────────────────────────────
+  // Branch guard + update branch
+  // ─────────────────────────────────────────────
+
+  private async checkBranchGuard(): Promise<{ ok: boolean; error?: string; data?: unknown }> {
+    const currentBranch = (() => {
+      try {
+        return require('child_process').execSync(
+          'git rev-parse --abbrev-ref HEAD',
+          { encoding: 'utf8', cwd: REPO_DIR, env: this.env }
+        ).trim()
+      } catch { return 'unknown' }
+    })()
+
+    const onMain = currentBranch === 'main' || currentBranch === 'master'
+
+    // Check if current branch is behind main (only if not on main)
+    let behindMain = false
+    if (!onMain && currentBranch !== 'unknown') {
+      try {
+        const behind = require('child_process').execSync(
+          'git log HEAD..origin/main --oneline',
+          { encoding: 'utf8', cwd: REPO_DIR, env: this.env }
+        ).trim()
+        behindMain = behind.length > 0
+      } catch { behindMain = false }
+    }
+
+    return { ok: true, data: { currentBranch, onMain, behindMain } }
+  }
+
+  private async prUpdateBranch(): Promise<{ ok: boolean; error?: string }> {
+    const log = this.log.bind(this)
+    const branch = this.state.currentBranch
+
+    if (!branch) return { ok: false, error: 'No branch set' }
+
+    log(`Fetching latest main...`)
+    await runWithLog('git', ['fetch', 'origin', 'main'], log, { cwd: REPO_DIR, env: this.env })
+
+    log(`Merging origin/main into ${branch}...`)
+    await runWithLog('git', ['merge', 'origin/main', '--no-edit'], log, { cwd: REPO_DIR, env: this.env })
+
+    // Re-run yarn if package.json changed in the merge
+    const pkgChanged = (() => {
+      try {
+        const out = require('child_process').execSync(
+          'git diff HEAD~1 HEAD --name-only',
+          { encoding: 'utf8', cwd: REPO_DIR, env: this.env }
+        )
+        return out.includes('package.json')
+      } catch { return false }
+    })()
+
+    if (pkgChanged) {
+      log('package.json changed — running yarn install...')
+      await runWithLog('yarn', ['install'], log, { cwd: REPO_DIR, env: this.env })
+    }
+
+    log('Branch is up to date with main ✓')
+    return { ok: true }
+  }
+
+  // ─────────────────────────────────────────────
+  // Refine AI annotation reader (read-only)
+  // ─────────────────────────────────────────────
+
+  private async getRefineAnnotations(): Promise<{ ok: boolean; error?: string; data?: unknown }> {
+    const annotationsPath = path.join(
+      os.homedir(), 'Library', 'Application Support', 'Refine AI', 'annotations.json'
+    )
+
+    if (!fs.existsSync(annotationsPath)) {
+      return { ok: true, data: { annotations: [] } }
+    }
+
+    try {
+      const raw = fs.readFileSync(annotationsPath, 'utf8')
+      const all = JSON.parse(raw)
+      // Only return pending annotations — resolved ones aren't relevant to this PR
+      const pending = all.filter((a: any) => a.status === 'pending')
+      return { ok: true, data: { annotations: pending } }
+    } catch {
+      return { ok: true, data: { annotations: [] } }
+    }
+  }
+
+  // ─────────────────────────────────────────────
+  // AI commit message generation via Claude
+  // ─────────────────────────────────────────────
+
+  private async generateCommitMessage(annotationsJson: string): Promise<{ ok: boolean; error?: string; data?: unknown }> {
+    const key = this.state.claudeKey
+    if (!key) return { ok: false, error: 'No Claude API key set' }
+
+    const log = this.log.bind(this)
+    log('Reading diff...')
+
+    // Get the diff — cap at 6000 chars to stay within token limits
+    const diff = (() => {
+      try {
+        const out = require('child_process').execSync(
+          'git diff HEAD',
+          { encoding: 'utf8', cwd: REPO_DIR, env: this.env }
+        )
+        return out.slice(0, 6000)
+      } catch { return '' }
+    })()
+
+    // Also get file list for context
+    const fileList = (() => {
+      try {
+        return require('child_process').execSync(
+          'git status --porcelain',
+          { encoding: 'utf8', cwd: REPO_DIR, env: this.env }
+        ).trim()
+      } catch { return '' }
+    })()
+
+    let annotationContext = ''
+    if (annotationsJson) {
+      try {
+        const annotations = JSON.parse(annotationsJson)
+        if (annotations.length > 0) {
+          annotationContext = '\n\nDesigner annotations these changes address:\n' +
+            annotations.map((a: any) =>
+              `- [${a.priority ?? 'medium'}] ${a.comment}${a.routeName ? ` (${a.routeName})` : ''}`
+            ).join('\n')
+        }
+      } catch { /* ignore */ }
+    }
+
+    log('Generating commit message with Claude...')
+
+    const { Anthropic } = require('@anthropic-ai/sdk')
+    const client = new Anthropic({ apiKey: key })
+
+    const prompt = `You are helping a designer write a clear git commit message and GitHub PR description for changes to the MetaMask Mobile codebase.
+
+Changed files:
+${fileList || '(no file list available)'}
+
+Git diff (may be truncated):
+${diff || '(no diff available)'}${annotationContext}
+
+Generate:
+1. A concise commit message (max 72 chars, imperative tense, e.g. "Fix button padding on swap screen")
+2. A short PR description (2-4 sentences in plain English explaining what changed and why, suitable for an engineer reviewer)
+
+Respond with valid JSON only in this exact format:
+{"commitMessage": "...", "prDescription": "..."}`
+
+    const message = await client.messages.create({
+      model: 'claude-3-5-haiku-20241022',
+      max_tokens: 300,
+      messages: [{ role: 'user', content: prompt }],
+    })
+
+    const text = message.content[0].type === 'text' ? message.content[0].text : ''
+
+    try {
+      const parsed = JSON.parse(text.trim())
+      log('Generated ✓')
+      return { ok: true, data: { commitMessage: parsed.commitMessage, prDescription: parsed.prDescription } }
+    } catch {
+      // Claude returned text but not clean JSON — try to extract
+      const commitMatch = text.match(/"commitMessage"\s*:\s*"([^"]+)"/)
+      const descMatch = text.match(/"prDescription"\s*:\s*"([^"]+)"/)
+      if (commitMatch) {
+        return { ok: true, data: {
+          commitMessage: commitMatch[1],
+          prDescription: descMatch ? descMatch[1] : '',
+        }}
+      }
+      return { ok: false, error: 'Could not parse Claude response' }
+    }
   }
 }
