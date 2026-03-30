@@ -1,0 +1,1326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>MetaMask Designer Tools</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+      background: #0f0f0f;
+      color: #f0f0f0;
+      height: 100vh;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .titlebar {
+      height: 52px;
+      -webkit-app-region: drag;
+      display: flex;
+      align-items: center;
+      padding: 0 20px;
+      flex-shrink: 0;
+    }
+
+    .logo {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      margin: 0 auto;
+    }
+
+    .logo-fox { width: 28px; height: 28px; }
+
+    .logo-text {
+      font-size: 15px;
+      font-weight: 600;
+      color: #f0f0f0;
+      letter-spacing: -0.3px;
+    }
+
+    /* ── Tab bar ── */
+    .tab-bar {
+      display: none;
+      gap: 4px;
+      padding: 0 20px 12px;
+      flex-shrink: 0;
+      border-bottom: 1px solid #1e1e1e;
+      -webkit-app-region: no-drag;
+    }
+
+    .tab-bar.visible { display: flex; }
+
+    .tab-item {
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 500;
+      color: #555;
+      cursor: pointer;
+      border: none;
+      background: transparent;
+      transition: background 0.15s, color 0.15s;
+    }
+
+    .tab-item:hover { color: #888; background: #1a1a1a; }
+    .tab-item.active { color: #f0f0f0; background: #1a1a1a; }
+
+    .content {
+      flex: 1;
+      overflow-y: auto;
+      padding: 8px 40px 32px;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* ── Screens ── */
+    .screen { display: none; flex-direction: column; flex: 1; }
+    .screen.active { display: flex; }
+
+    /* Welcome */
+    .welcome-body {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      gap: 16px;
+      text-align: center;
+    }
+
+    .welcome-title {
+      font-size: 26px;
+      font-weight: 700;
+      letter-spacing: -0.5px;
+      line-height: 1.2;
+    }
+
+    .welcome-sub {
+      font-size: 15px;
+      color: #888;
+      max-width: 360px;
+      line-height: 1.6;
+    }
+
+    /* Steps */
+    .steps-header { margin-bottom: 24px; }
+
+    .steps-title {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+    }
+
+    .steps-sub {
+      font-size: 13px;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    .step-list {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      flex: 1;
+    }
+
+    .step {
+      display: flex;
+      align-items: center;
+      gap: 14px;
+      padding: 14px 16px;
+      background: #1a1a1a;
+      border-radius: 12px;
+      border: 1px solid #2a2a2a;
+      transition: border-color 0.2s;
+    }
+
+    .step.active { border-color: #f6851b; }
+    .step.done { border-color: #2a2a2a; opacity: 0.7; }
+    .step.error { border-color: #ff4444; }
+
+    .step-icon {
+      width: 36px;
+      height: 36px;
+      border-radius: 50%;
+      background: #2a2a2a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-shrink: 0;
+      font-size: 16px;
+    }
+
+    .step.active .step-icon { background: #f6851b22; }
+    .step.done .step-icon { background: #22c55e22; }
+    .step.error .step-icon { background: #ff444422; }
+
+    .step-info { flex: 1; }
+
+    .step-name { font-size: 14px; font-weight: 600; }
+
+    .step-detail {
+      font-size: 12px;
+      color: #666;
+      margin-top: 2px;
+    }
+
+    .step.active .step-detail { color: #f6851b; }
+    .step.error .step-detail { color: #ff4444; }
+
+    .step-status { font-size: 12px; color: #444; }
+    .step.done .step-status { color: #22c55e; }
+
+    /* Spinner */
+    @keyframes spin { to { transform: rotate(360deg); } }
+    .spinner {
+      width: 16px; height: 16px;
+      border: 2px solid #333;
+      border-top-color: #f6851b;
+      border-radius: 50%;
+      animation: spin 0.7s linear infinite;
+    }
+
+    /* Infura / input card */
+    .input-card {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 16px;
+      padding: 28px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      flex: 1;
+    }
+
+    .card-title {
+      font-size: 20px;
+      font-weight: 700;
+      letter-spacing: -0.3px;
+    }
+
+    .card-desc {
+      font-size: 14px;
+      color: #888;
+      line-height: 1.6;
+    }
+
+    .card-desc strong { color: #f0f0f0; }
+
+    .card-link-btn {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 12px 20px;
+      background: #1d3a5e;
+      border: 1px solid #2a5a9e;
+      border-radius: 10px;
+      color: #60a5fa;
+      font-size: 14px;
+      font-weight: 500;
+      cursor: pointer;
+      width: fit-content;
+      transition: background 0.15s;
+    }
+
+    .card-link-btn:hover { background: #22457a; }
+
+    .key-input-wrap { display: flex; flex-direction: column; gap: 8px; }
+
+    .key-label {
+      font-size: 12px;
+      color: #666;
+      font-weight: 500;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+
+    .key-input {
+      background: #0f0f0f;
+      border: 1px solid #333;
+      border-radius: 10px;
+      color: #f0f0f0;
+      font-size: 14px;
+      font-family: 'SF Mono', monospace;
+      padding: 12px 16px;
+      outline: none;
+      transition: border-color 0.2s;
+      width: 100%;
+    }
+
+    .key-input:focus { border-color: #f6851b; }
+    .key-input::placeholder { color: #444; }
+
+    .key-hint { font-size: 12px; color: #555; }
+
+    /* Log view */
+    .log-view {
+      background: #0a0a0a;
+      border: 1px solid #222;
+      border-radius: 10px;
+      padding: 12px 16px;
+      height: 120px;
+      overflow-y: auto;
+      font-family: 'SF Mono', 'Menlo', monospace;
+      font-size: 11px;
+      color: #555;
+      margin-top: 12px;
+    }
+
+    .log-view .log-line { margin-bottom: 2px; }
+    .log-view .log-line.new { color: #888; }
+
+    /* Buttons */
+    .btn {
+      padding: 14px 28px;
+      border-radius: 12px;
+      font-size: 15px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: opacity 0.15s, transform 0.1s;
+      -webkit-app-region: no-drag;
+    }
+
+    .btn:active { transform: scale(0.98); }
+    .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+
+    .btn-primary {
+      background: #f6851b;
+      color: #000;
+      width: 100%;
+    }
+
+    .btn-primary:hover:not(:disabled) { opacity: 0.9; }
+
+    .btn-secondary {
+      background: #1a1a1a;
+      color: #f0f0f0;
+      border: 1px solid #333;
+      width: 100%;
+    }
+
+    .btn-secondary:hover:not(:disabled) { background: #222; }
+
+    .btn-sm {
+      padding: 10px 18px;
+      font-size: 13px;
+      border-radius: 10px;
+      width: auto;
+      align-self: flex-start;
+    }
+
+    .error-banner {
+      background: #ff44441a;
+      border: 1px solid #ff444433;
+      border-radius: 10px;
+      padding: 12px 16px;
+      font-size: 13px;
+      color: #ff7777;
+      display: none;
+      margin-top: 12px;
+    }
+
+    .error-banner.visible { display: block; }
+
+    .spacer { flex: 1; }
+
+    .footer-actions {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+      padding-top: 16px;
+    }
+
+    /* ── Launch screen ── */
+    .launch-hero {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      flex: 1;
+      gap: 20px;
+      text-align: center;
+    }
+
+    .launch-title {
+      font-size: 24px;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+    }
+
+    .launch-sub {
+      font-size: 14px;
+      color: #666;
+      max-width: 320px;
+      line-height: 1.6;
+    }
+
+    .user-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 14px;
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 20px;
+      font-size: 13px;
+      color: #888;
+    }
+
+    .user-badge .dot {
+      width: 8px; height: 8px;
+      border-radius: 50%;
+      background: #22c55e;
+    }
+
+    /* ── PR screen ── */
+    .pr-header {
+      margin-bottom: 20px;
+    }
+
+    .pr-title {
+      font-size: 22px;
+      font-weight: 700;
+      letter-spacing: -0.4px;
+    }
+
+    .pr-sub {
+      font-size: 13px;
+      color: #666;
+      margin-top: 4px;
+    }
+
+    .pr-steps {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .pr-card {
+      background: #1a1a1a;
+      border: 1px solid #2a2a2a;
+      border-radius: 12px;
+      overflow: hidden;
+      transition: border-color 0.2s;
+    }
+
+    .pr-card.active { border-color: #f6851b; }
+    .pr-card.done { opacity: 0.65; }
+
+    .pr-card-header {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      padding: 14px 16px;
+    }
+
+    .pr-num {
+      width: 22px;
+      height: 22px;
+      border-radius: 50%;
+      background: #2a2a2a;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 11px;
+      font-weight: 700;
+      color: #555;
+      flex-shrink: 0;
+    }
+
+    .pr-card.active .pr-num { background: #f6851b22; color: #f6851b; }
+    .pr-card.done .pr-num { background: #22c55e22; color: #22c55e; }
+
+    .pr-card-title {
+      font-size: 14px;
+      font-weight: 600;
+      flex: 1;
+    }
+
+    .pr-card-badge {
+      font-size: 11px;
+      color: #22c55e;
+      font-weight: 500;
+    }
+
+    .pr-card-body {
+      padding: 0 16px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+    }
+
+    .pr-desc {
+      font-size: 13px;
+      color: #666;
+      line-height: 1.5;
+    }
+
+    .branch-preview {
+      font-size: 12px;
+      font-family: 'SF Mono', monospace;
+      color: #f6851b;
+      min-height: 18px;
+    }
+
+    .changed-files {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+      max-height: 100px;
+      overflow-y: auto;
+    }
+
+    .changed-file {
+      font-size: 11px;
+      font-family: 'SF Mono', monospace;
+      color: #888;
+      padding: 3px 8px;
+      background: #0f0f0f;
+      border-radius: 4px;
+    }
+
+    .snapshot-notice {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 12px;
+      background: #f6851b11;
+      border: 1px solid #f6851b33;
+      border-radius: 8px;
+      font-size: 12px;
+      color: #f6851b;
+    }
+
+    .pr-log {
+      height: 80px;
+      margin-top: 4px;
+    }
+  </style>
+</head>
+<body>
+
+<div class="titlebar">
+  <div class="logo">
+    <svg class="logo-fox" viewBox="0 0 40 40" fill="none" xmlns="http://www.w3.org/2000/svg">
+      <rect width="40" height="40" rx="10" fill="#1a1a1a"/>
+      <text x="20" y="28" text-anchor="middle" font-size="22">🦊</text>
+    </svg>
+    <span class="logo-text">MetaMask Designer Tools</span>
+  </div>
+</div>
+
+<!-- Tab bar — hidden during setup, shown on dashboard -->
+<div class="tab-bar" id="tab-bar">
+  <button class="tab-item active" id="tab-launch" onclick="switchTab('launch')">🚀 Launch</button>
+  <button class="tab-item" id="tab-pr" onclick="switchTab('pr')">📬 File a PR</button>
+</div>
+
+<div class="content">
+
+  <!-- ── Screen: Welcome ── -->
+  <div class="screen active" id="screen-welcome">
+    <div class="welcome-body">
+      <div style="font-size:64px; line-height:1">🦊</div>
+      <div class="welcome-title">MetaMask Designer Tools</div>
+      <div class="welcome-sub">Set up your environment, review designs in the iOS Simulator, and file PRs — no Terminal required.</div>
+      <div style="font-size:12px; color:#555; margin-top:4px;">Takes about 20 minutes on first run.<br>After that, opens in seconds.</div>
+    </div>
+    <div class="footer-actions">
+      <button class="btn btn-primary" onclick="startSetup()">Get Started</button>
+    </div>
+  </div>
+
+  <!-- ── Screen: Xcode Missing ── -->
+  <div class="screen" id="screen-xcode-missing">
+    <div class="welcome-body">
+      <div style="font-size:56px; line-height:1">🛠️</div>
+      <div class="welcome-title">Xcode Required</div>
+      <div class="welcome-sub">Xcode includes the iOS Simulator needed to run MetaMask. It's free and takes about 10 minutes to install.</div>
+    </div>
+    <div class="footer-actions">
+      <button class="btn btn-primary" onclick="openXcodeAppStore()">Open App Store → Xcode</button>
+      <button class="btn btn-secondary" onclick="checkXcodeAgain()">I've installed it — Continue</button>
+    </div>
+  </div>
+
+  <!-- ── Screen: Infura Key ── -->
+  <div class="screen" id="screen-infura">
+    <div class="input-card">
+      <div>
+        <div class="card-title">Your Infura API Key</div>
+        <div style="font-size:13px; color:#666; margin-top:4px;">Step 2 of 5</div>
+      </div>
+      <div class="card-desc">
+        MetaMask needs an <strong>Infura API key</strong> to connect to the blockchain. It's free and takes 2 minutes to get.
+      </div>
+      <button class="card-link-btn" onclick="openInfura()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        Get a free Infura key
+      </button>
+      <div class="key-input-wrap">
+        <div class="key-label">Paste your API Key here</div>
+        <input
+          class="key-input"
+          id="infura-key-input"
+          type="password"
+          placeholder="xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+          oninput="onInfuraInput()"
+          autocomplete="off"
+          spellcheck="false"
+        />
+        <div class="key-hint">From app.infura.io → your project → API Key</div>
+      </div>
+      <div id="infura-error" class="error-banner">Please enter a valid Infura API key.</div>
+    </div>
+    <div class="footer-actions" style="margin-top:16px;">
+      <button class="btn btn-primary" id="infura-continue-btn" disabled onclick="continueWithInfura()">Continue</button>
+    </div>
+  </div>
+
+  <!-- ── Screen: Running Setup ── -->
+  <div class="screen" id="screen-running">
+    <div class="steps-header">
+      <div class="steps-title">Setting up your environment</div>
+      <div class="steps-sub">Sit tight — everything is running in the background.</div>
+    </div>
+    <div class="step-list">
+      <div class="step" id="step-prereqs">
+        <div class="step-icon">📦</div>
+        <div class="step-info">
+          <div class="step-name">Install tools</div>
+          <div class="step-detail" id="step-prereqs-detail">Homebrew, Node 20, Yarn, Watchman</div>
+        </div>
+        <div class="step-status" id="step-prereqs-status"></div>
+      </div>
+      <div class="step" id="step-repo">
+        <div class="step-icon">📂</div>
+        <div class="step-info">
+          <div class="step-name">Clone repository</div>
+          <div class="step-detail" id="step-repo-detail">MetaMask/metamask-mobile</div>
+        </div>
+        <div class="step-status" id="step-repo-status"></div>
+      </div>
+      <div class="step" id="step-refine-ai">
+        <div class="step-icon">🤖</div>
+        <div class="step-info">
+          <div class="step-name">Refine AI</div>
+          <div class="step-detail" id="step-refine-ai-detail">Checking for latest version</div>
+        </div>
+        <div class="step-status" id="step-refine-ai-status"></div>
+      </div>
+      <div class="step" id="step-deps">
+        <div class="step-icon">🧶</div>
+        <div class="step-info">
+          <div class="step-name">Install dependencies</div>
+          <div class="step-detail" id="step-deps-detail">yarn setup:expo (~5 min)</div>
+        </div>
+        <div class="step-status" id="step-deps-status"></div>
+      </div>
+      <div class="step" id="step-build">
+        <div class="step-icon">📲</div>
+        <div class="step-info">
+          <div class="step-name">Download latest build</div>
+          <div class="step-detail" id="step-build-detail">Getting build from Runway</div>
+        </div>
+        <div class="step-status" id="step-build-status"></div>
+      </div>
+      <div class="step" id="step-launch">
+        <div class="step-icon">🚀</div>
+        <div class="step-info">
+          <div class="step-name">Launch MetaMask</div>
+          <div class="step-detail" id="step-launch-detail">iOS Simulator + bundler</div>
+        </div>
+        <div class="step-status" id="step-launch-status"></div>
+      </div>
+    </div>
+    <div class="log-view" id="log-view"></div>
+    <div id="running-error" class="error-banner"></div>
+  </div>
+
+  <!-- ── Screen: GitHub Token ── -->
+  <div class="screen" id="screen-github">
+    <div class="input-card">
+      <div>
+        <div class="card-title">Connect your GitHub account</div>
+        <div style="font-size:13px; color:#666; margin-top:4px;">One-time setup — needed to file PRs</div>
+      </div>
+      <div class="card-desc">
+        Create a <strong>Personal Access Token</strong> on GitHub with <strong>repo</strong> access. This lets the app push your changes and open pull requests.
+      </div>
+      <button class="card-link-btn" onclick="openGithubToken()">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 13v6a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h6"/><polyline points="15 3 21 3 21 9"/><line x1="10" y1="14" x2="21" y2="3"/></svg>
+        Create a GitHub token
+      </button>
+      <div class="card-desc" style="font-size:12px; color:#555;">
+        On the token page: set expiration → No expiration, check the <strong>repo</strong> checkbox, click Generate token, copy it.
+      </div>
+      <div class="key-input-wrap">
+        <div class="key-label">Paste your token here</div>
+        <input
+          class="key-input"
+          id="github-token-input"
+          type="password"
+          placeholder="ghp_xxxxxxxxxxxxxxxxxxxx"
+          oninput="onGithubTokenInput()"
+          autocomplete="off"
+          spellcheck="false"
+        />
+      </div>
+      <div id="github-error" class="error-banner">Could not validate token. Make sure it has <strong>repo</strong> access.</div>
+    </div>
+    <div class="footer-actions" style="margin-top:16px;">
+      <button class="btn btn-primary" id="github-continue-btn" disabled onclick="continueWithGithub()">Connect GitHub</button>
+      <button class="btn btn-secondary" onclick="skipGithub()">Skip for now</button>
+    </div>
+  </div>
+
+  <!-- ── Screen: Launch (Dashboard) ── -->
+  <div class="screen" id="screen-launch">
+    <div class="launch-hero">
+      <div style="font-size:56px; line-height:1">📱</div>
+      <div class="launch-title">Launch MetaMask</div>
+      <div class="launch-sub">Boots the iOS Simulator, starts the bundler, and opens Refine AI.</div>
+      <div id="github-user-badge" class="user-badge" style="display:none">
+        <div class="dot"></div>
+        <span id="github-username-label">Connected to GitHub</span>
+      </div>
+    </div>
+    <div class="step-list" id="launch-step-list" style="display:none; flex:0">
+      <div class="step" id="step-refine-ai-launch">
+        <div class="step-icon">🤖</div>
+        <div class="step-info">
+          <div class="step-name">Refine AI</div>
+          <div class="step-detail" id="step-refine-ai-launch-detail">Checking for updates</div>
+        </div>
+        <div class="step-status" id="step-refine-ai-launch-status"></div>
+      </div>
+      <div class="step" id="step-build-launch">
+        <div class="step-icon">📲</div>
+        <div class="step-info">
+          <div class="step-name">Latest build</div>
+          <div class="step-detail" id="step-build-launch-detail">Checking Runway</div>
+        </div>
+        <div class="step-status" id="step-build-launch-status"></div>
+      </div>
+      <div class="step" id="step-launch-launch">
+        <div class="step-icon">🚀</div>
+        <div class="step-info">
+          <div class="step-name">Launch MetaMask</div>
+          <div class="step-detail" id="step-launch-launch-detail">iOS Simulator + bundler</div>
+        </div>
+        <div class="step-status" id="step-launch-launch-status"></div>
+      </div>
+    </div>
+    <div class="log-view" id="launch-log-view" style="display:none"></div>
+    <div id="launch-error" class="error-banner"></div>
+    <div class="footer-actions">
+      <button class="btn btn-primary" id="launch-btn" onclick="doLaunch()">Launch MetaMask</button>
+    </div>
+  </div>
+
+  <!-- ── Screen: File a PR ── -->
+  <div class="screen" id="screen-pr">
+    <div class="pr-header">
+      <div class="pr-title">File a PR</div>
+      <div class="pr-sub">Follow the steps to get your changes into the codebase</div>
+    </div>
+
+    <div class="pr-steps">
+
+      <!-- Step 1: Sync -->
+      <div class="pr-card" id="pr-card-sync">
+        <div class="pr-card-header">
+          <div class="pr-num">1</div>
+          <div class="pr-card-title">Sync with main</div>
+          <div class="pr-card-badge" id="sync-badge"></div>
+        </div>
+        <div class="pr-card-body">
+          <div class="pr-desc">Pull the latest changes before you start. Also runs <code style="font-family:SF Mono,monospace;font-size:11px;color:#888">yarn install</code> if dependencies changed.</div>
+          <button class="btn btn-secondary btn-sm" id="sync-btn" onclick="doSync()">Sync with main</button>
+          <div class="log-view pr-log" id="sync-log" style="display:none"></div>
+        </div>
+      </div>
+
+      <!-- Step 2: Branch -->
+      <div class="pr-card" id="pr-card-branch">
+        <div class="pr-card-header">
+          <div class="pr-num">2</div>
+          <div class="pr-card-title">Create a branch</div>
+          <div class="pr-card-badge" id="branch-badge"></div>
+        </div>
+        <div class="pr-card-body">
+          <div class="pr-desc">Name your branch based on what you're changing. It'll show up in the PR.</div>
+          <input
+            class="key-input"
+            id="branch-desc-input"
+            placeholder="e.g. fix button spacing on swap screen"
+            oninput="onBranchInput()"
+            spellcheck="false"
+          />
+          <div class="branch-preview" id="branch-preview"></div>
+          <button class="btn btn-secondary btn-sm" id="branch-btn" onclick="doCreateBranch()" disabled>Create Branch</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Open Cursor -->
+      <div class="pr-card" id="pr-card-cursor">
+        <div class="pr-card-header">
+          <div class="pr-num">3</div>
+          <div class="pr-card-title">Make your changes</div>
+        </div>
+        <div class="pr-card-body">
+          <div class="pr-desc">Open the repo in Cursor and make your edits. Come back here when you're done.</div>
+          <button class="btn btn-secondary btn-sm" id="cursor-btn" onclick="openInCursor()">Open in Cursor</button>
+          <div id="cursor-missing" style="display:none; font-size:12px; color:#f6851b">
+            Cursor not found. <span style="cursor:pointer; text-decoration:underline" onclick="openCursorDownload()">Download Cursor →</span>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step 4: Review changes -->
+      <div class="pr-card" id="pr-card-changes">
+        <div class="pr-card-header">
+          <div class="pr-num">4</div>
+          <div class="pr-card-title">Review changes</div>
+          <div class="pr-card-badge" id="changes-badge"></div>
+        </div>
+        <div class="pr-card-body">
+          <div class="pr-desc">Scan for what you changed. If any components have snapshots, the app will update them automatically.</div>
+          <button class="btn btn-secondary btn-sm" id="scan-btn" onclick="doScanChanges()">Scan for changes</button>
+          <div class="changed-files" id="changed-files-list"></div>
+          <div class="snapshot-notice" id="snapshot-notice" style="display:none">
+            ⚠️ Some files have snapshots — tap below to update them
+          </div>
+          <button class="btn btn-secondary btn-sm" id="snapshot-btn" onclick="doUpdateSnapshots()" style="display:none">Update snapshots</button>
+          <div class="log-view pr-log" id="changes-log" style="display:none"></div>
+        </div>
+      </div>
+
+      <!-- Step 5: Submit -->
+      <div class="pr-card" id="pr-card-submit">
+        <div class="pr-card-header">
+          <div class="pr-num">5</div>
+          <div class="pr-card-title">Submit PR</div>
+        </div>
+        <div class="pr-card-body">
+          <div class="pr-desc">Describe what you changed. This becomes your commit message and PR title.</div>
+          <input
+            class="key-input"
+            id="commit-msg-input"
+            placeholder="e.g. Fix button spacing on swap screen"
+            oninput="onCommitInput()"
+            spellcheck="false"
+          />
+          <button class="btn btn-primary btn-sm" id="push-btn" onclick="doPushPR()" disabled>Push & Open PR →</button>
+          <div class="log-view pr-log" id="submit-log" style="display:none"></div>
+        </div>
+      </div>
+
+    </div>
+
+    <div id="pr-error" class="error-banner" style="margin-top:12px"></div>
+  </div>
+
+</div>
+
+<script>
+;(function () {
+const api = window.api
+
+if (!api) {
+  document.body.innerHTML = '<div style="color:#ff6b6b;font-family:sans-serif;padding:40px;background:#0f0f0f;height:100vh;box-sizing:border-box"><h2>⚠️ Preload Error</h2><p>window.api is undefined — the preload script did not load correctly.</p></div>'
+  throw new Error('window.api is undefined')
+}
+
+// ── State ──
+let state = {}
+let currentTab = 'launch'
+let prBranchName = ''
+let prHasSnapshots = false
+
+function showScreen(id) {
+  document.querySelectorAll('.screen').forEach(s => s.classList.remove('active'))
+  const el = document.getElementById('screen-' + id)
+  if (el) el.classList.add('active')
+}
+
+function showDashboard(tab) {
+  document.getElementById('tab-bar').classList.add('visible')
+  switchTab(tab || 'launch')
+  if (state.githubUsername) {
+    document.getElementById('github-user-badge').style.display = 'inline-flex'
+    document.getElementById('github-username-label').textContent = '@' + state.githubUsername + ' connected'
+  }
+}
+
+function switchTab(tab) {
+  currentTab = tab
+  document.querySelectorAll('.tab-item').forEach(t => t.classList.remove('active'))
+  const tabEl = document.getElementById('tab-' + tab)
+  if (tabEl) tabEl.classList.add('active')
+  showScreen(tab)
+  if (tab === 'pr') initPRScreen()
+}
+
+// ── Progress listener ──
+api.onProgress((type, data) => {
+  if (type === 'log') {
+    appendLog('log-view', data)
+    appendLog('launch-log-view', data)
+    appendLog('sync-log', data)
+    appendLog('changes-log', data)
+    appendLog('submit-log', data)
+  } else if (type === 'progress') {
+    updateStep(data.step, data.status, data.detail)
+    // Mirror launch steps to launch screen step IDs
+    updateStep(data.step + '-launch', data.status, data.detail)
+  } else if (type === 'error') {
+    showError('running-error', data)
+    showError('launch-error', data)
+    showError('pr-error', data)
+  }
+})
+
+function appendLog(logId, msg) {
+  const el = document.getElementById(logId)
+  if (!el || el.style.display === 'none') return
+  const line = document.createElement('div')
+  line.className = 'log-line new'
+  line.textContent = '› ' + msg
+  el.appendChild(line)
+  el.scrollTop = el.scrollHeight
+}
+
+function showLog(logId) {
+  const el = document.getElementById(logId)
+  if (el) el.style.display = 'block'
+}
+
+function updateStep(stepId, status, detail) {
+  const el = document.getElementById('step-' + stepId)
+  const detailEl = document.getElementById('step-' + stepId + '-detail')
+  const statusEl = document.getElementById('step-' + stepId + '-status')
+  if (!el) return
+
+  el.className = 'step ' + (
+    status === 'running' ? 'active' :
+    status === 'done' || status === 'skipped' ? 'done' :
+    status === 'error' ? 'error' : ''
+  )
+
+  const icon = el.querySelector('.step-icon')
+  if (status === 'running') {
+    icon.innerHTML = '<div class="spinner"></div>'
+    if (statusEl) statusEl.textContent = ''
+  } else if (status === 'done' || status === 'skipped') {
+    icon.textContent = status === 'skipped' ? '⏭' : '✓'
+    if (statusEl) statusEl.textContent = status === 'skipped' ? 'skipped' : 'done'
+  } else if (status === 'error') {
+    icon.textContent = '✗'
+  }
+
+  if (detail && detailEl) detailEl.textContent = detail
+}
+
+function setPRCard(cardId, state) {
+  const el = document.getElementById('pr-card-' + cardId)
+  if (!el) return
+  el.className = 'pr-card ' + (state || '')
+}
+
+function showError(id, msg) {
+  const el = document.getElementById(id)
+  if (!el) return
+  el.textContent = msg
+  el.classList.add('visible')
+}
+
+function clearError(id) {
+  const el = document.getElementById(id)
+  if (el) el.classList.remove('visible')
+}
+
+function resetStepUI() {
+  const emojis = { prereqs: '📦', repo: '📂', deps: '🧶', build: '📲', launch: '🚀', 'refine-ai': '🤖' }
+  document.querySelectorAll('.step').forEach(s => {
+    s.className = 'step'
+    const icon = s.querySelector('.step-icon')
+    const id = s.id.replace('step-', '').replace('-launch', '')
+    if (icon) icon.textContent = emojis[id] || '•'
+    const statusEl = s.querySelector('.step-status')
+    if (statusEl) statusEl.textContent = ''
+  })
+  ;['log-view', 'launch-log-view'].forEach(id => {
+    const el = document.getElementById(id)
+    if (el) el.innerHTML = ''
+  })
+  ;['running-error', 'launch-error'].forEach(id => clearError(id))
+}
+
+// ── Welcome → check xcode ──
+async function startSetup() {
+  state = await api.getState()
+
+  // Fully set up with GitHub token → dashboard
+  if (state.setupComplete && state.githubToken) {
+    showDashboard('launch')
+    return
+  }
+
+  // Set up but missing GitHub token
+  if (state.setupComplete && !state.githubToken) {
+    showScreen('github')
+    return
+  }
+
+  // Not set up — run setup
+  showScreen('running')
+  const xcodeResult = await api.runStep('check-xcode')
+  if (!xcodeResult.ok && xcodeResult.error === 'xcode-missing') {
+    showScreen('xcode-missing')
+    return
+  }
+
+  if (!state.infuraKey) {
+    showScreen('infura')
+    return
+  }
+
+  runFullSetup()
+}
+
+function openXcodeAppStore() {
+  api.openUrl('https://apps.apple.com/us/app/xcode/id497799835')
+}
+
+async function checkXcodeAgain() {
+  const result = await api.runStep('check-xcode')
+  if (result.ok) {
+    if (!state.infuraKey) showScreen('infura')
+    else runFullSetup()
+  }
+}
+
+// ── Infura ──
+function openInfura() { api.openUrl('https://app.infura.io/register') }
+
+function onInfuraInput() {
+  const val = document.getElementById('infura-key-input').value.trim()
+  document.getElementById('infura-continue-btn').disabled = val.length < 10
+  document.getElementById('infura-error').classList.remove('visible')
+}
+
+async function continueWithInfura() {
+  const key = document.getElementById('infura-key-input').value.trim()
+  const result = await api.runStep('save-infura-key', { key })
+  if (!result.ok) {
+    document.getElementById('infura-error').classList.add('visible')
+    return
+  }
+  state.infuraKey = key
+  runFullSetup()
+}
+
+// ── Full setup ──
+async function runFullSetup() {
+  showScreen('running')
+  resetStepUI()
+
+  const steps = ['install-prereqs', 'clone-repo', 'check-refine-ai', 'install-deps', 'download-build', 'launch']
+  for (const step of steps) {
+    const result = await api.runStep(step)
+    if (!result.ok) {
+      showError('running-error', 'Setup failed at: ' + step + '. ' + (result.error || ''))
+      return
+    }
+  }
+
+  // After full setup, collect GitHub token
+  showScreen('github')
+}
+
+// ── GitHub token ──
+function openGithubToken() {
+  api.openUrl('https://github.com/settings/tokens/new?scopes=repo&description=MetaMask+Designer+Tools')
+}
+
+function onGithubTokenInput() {
+  const val = document.getElementById('github-token-input').value.trim()
+  document.getElementById('github-continue-btn').disabled = val.length < 20
+  document.getElementById('github-error').classList.remove('visible')
+}
+
+async function continueWithGithub() {
+  const token = document.getElementById('github-token-input').value.trim()
+  const btn = document.getElementById('github-continue-btn')
+  btn.disabled = true
+  btn.textContent = 'Connecting...'
+
+  const result = await api.runStep('save-github-token', { token })
+  btn.disabled = false
+  btn.textContent = 'Connect GitHub'
+
+  if (!result.ok) {
+    document.getElementById('github-error').classList.add('visible')
+    return
+  }
+
+  state = await api.getState()
+  showDashboard('launch')
+}
+
+function skipGithub() {
+  showDashboard('launch')
+}
+
+// ── Launch ──
+async function doLaunch() {
+  const btn = document.getElementById('launch-btn')
+  btn.disabled = true
+  btn.textContent = 'Launching...'
+
+  document.getElementById('launch-step-list').style.display = 'flex'
+  document.getElementById('launch-log-view').style.display = 'block'
+  clearError('launch-error')
+  resetStepUI()
+
+  const steps = ['check-refine-ai', 'download-build', 'launch']
+  for (const step of steps) {
+    const result = await api.runStep(step)
+    if (!result.ok) {
+      showError('launch-error', result.error || 'Launch failed')
+      btn.disabled = false
+      btn.textContent = 'Launch MetaMask'
+      return
+    }
+  }
+
+  btn.disabled = false
+  btn.textContent = 'Launch MetaMask'
+}
+
+// ── PR screen init ──
+function initPRScreen() {
+  clearError('pr-error')
+  // Pre-fill branch preview if we have username
+  state = state || {}
+  onBranchInput()
+}
+
+// ── PR Step 1: Sync ──
+async function doSync() {
+  const btn = document.getElementById('sync-btn')
+  btn.disabled = true
+  btn.textContent = 'Syncing...'
+  showLog('sync-log')
+  document.getElementById('sync-log').innerHTML = ''
+  setPRCard('sync', 'active')
+  clearError('pr-error')
+
+  const result = await api.runStep('pr-sync')
+  btn.disabled = false
+  btn.textContent = 'Sync with main'
+
+  if (!result.ok) {
+    setPRCard('sync', '')
+    showError('pr-error', result.error || 'Sync failed')
+    return
+  }
+
+  setPRCard('sync', 'done')
+  document.getElementById('sync-badge').textContent = '✓ Up to date'
+}
+
+// ── PR Step 2: Branch ──
+function onBranchInput() {
+  const desc = document.getElementById('branch-desc-input').value.trim()
+  const username = (state && state.githubUsername) ? state.githubUsername : 'designer'
+  const btn = document.getElementById('branch-btn')
+
+  if (desc.length > 0) {
+    const slug = desc.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')
+    const preview = username + '/' + slug
+    document.getElementById('branch-preview').textContent = preview
+    btn.disabled = false
+  } else {
+    document.getElementById('branch-preview').textContent = ''
+    btn.disabled = true
+  }
+}
+
+async function doCreateBranch() {
+  const desc = document.getElementById('branch-desc-input').value.trim()
+  const btn = document.getElementById('branch-btn')
+  btn.disabled = true
+  btn.textContent = 'Creating...'
+  setPRCard('branch', 'active')
+  clearError('pr-error')
+
+  const result = await api.runStep('pr-create-branch', { name: desc })
+  btn.disabled = false
+  btn.textContent = 'Create Branch'
+
+  if (!result.ok) {
+    setPRCard('branch', '')
+    showError('pr-error', result.error || 'Branch creation failed')
+    return
+  }
+
+  prBranchName = result.data && result.data.branchName ? result.data.branchName : desc
+  setPRCard('branch', 'done')
+  document.getElementById('branch-badge').textContent = '✓ ' + prBranchName
+}
+
+// ── PR Step 3: Cursor ──
+async function openInCursor() {
+  const result = await api.runStep('check-cursor')
+  if (result.data && !result.data.installed) {
+    document.getElementById('cursor-missing').style.display = 'block'
+    return
+  }
+  document.getElementById('cursor-missing').style.display = 'none'
+  await api.runStep('open-cursor')
+}
+
+function openCursorDownload() {
+  api.openUrl('https://cursor.com')
+}
+
+// ── PR Step 4: Scan changes ──
+async function doScanChanges() {
+  const btn = document.getElementById('scan-btn')
+  btn.disabled = true
+  btn.textContent = 'Scanning...'
+  setPRCard('changes', 'active')
+  showLog('changes-log')
+  document.getElementById('changes-log').innerHTML = ''
+  document.getElementById('changed-files-list').innerHTML = ''
+  document.getElementById('snapshot-notice').style.display = 'none'
+  document.getElementById('snapshot-btn').style.display = 'none'
+  clearError('pr-error')
+
+  const result = await api.runStep('pr-changed-files')
+  btn.disabled = false
+  btn.textContent = 'Scan for changes'
+
+  if (!result.ok) {
+    setPRCard('changes', '')
+    showError('pr-error', result.error || 'Scan failed')
+    return
+  }
+
+  const { files, withSnapshots } = result.data || { files: [], withSnapshots: [] }
+  const fileList = document.getElementById('changed-files-list')
+
+  if (!files || files.length === 0) {
+    fileList.innerHTML = '<div class="changed-file" style="color:#555">No changes detected</div>'
+    setPRCard('changes', 'done')
+    document.getElementById('changes-badge').textContent = '✓ No changes'
+    return
+  }
+
+  files.forEach(f => {
+    const div = document.createElement('div')
+    div.className = 'changed-file'
+    div.textContent = f
+    fileList.appendChild(div)
+  })
+
+  document.getElementById('changes-badge').textContent = '✓ ' + files.length + ' file' + (files.length !== 1 ? 's' : '')
+
+  if (withSnapshots && withSnapshots.length > 0) {
+    prHasSnapshots = true
+    document.getElementById('snapshot-notice').style.display = 'flex'
+    document.getElementById('snapshot-btn').style.display = 'block'
+  } else {
+    prHasSnapshots = false
+    setPRCard('changes', 'done')
+  }
+}
+
+async function doUpdateSnapshots() {
+  const btn = document.getElementById('snapshot-btn')
+  btn.disabled = true
+  btn.textContent = 'Updating snapshots...'
+  clearError('pr-error')
+
+  const result = await api.runStep('pr-update-snapshots')
+  btn.disabled = false
+  btn.textContent = 'Update snapshots'
+
+  if (!result.ok) {
+    showError('pr-error', result.error || 'Snapshot update failed')
+    return
+  }
+
+  document.getElementById('snapshot-notice').style.display = 'none'
+  document.getElementById('snapshot-btn').style.display = 'none'
+  setPRCard('changes', 'done')
+}
+
+// ── PR Step 5: Commit & push ──
+function onCommitInput() {
+  const val = document.getElementById('commit-msg-input').value.trim()
+  document.getElementById('push-btn').disabled = val.length < 3
+}
+
+async function doPushPR() {
+  const message = document.getElementById('commit-msg-input').value.trim()
+  const btn = document.getElementById('push-btn')
+  btn.disabled = true
+  btn.textContent = 'Pushing...'
+  showLog('submit-log')
+  document.getElementById('submit-log').innerHTML = ''
+  setPRCard('submit', 'active')
+  clearError('pr-error')
+
+  const result = await api.runStep('pr-commit-push', { message })
+  btn.disabled = false
+  btn.textContent = 'Push & Open PR →'
+
+  if (!result.ok) {
+    setPRCard('submit', '')
+    showError('pr-error', result.error || 'Push failed')
+    return
+  }
+
+  setPRCard('submit', 'done')
+
+  if (result.data && result.data.prUrl) {
+    api.openUrl(result.data.prUrl)
+  }
+}
+
+// Expose global handlers
+window.startSetup = startSetup
+window.openXcodeAppStore = openXcodeAppStore
+window.checkXcodeAgain = checkXcodeAgain
+window.openInfura = openInfura
+window.onInfuraInput = onInfuraInput
+window.continueWithInfura = continueWithInfura
+window.openGithubToken = openGithubToken
+window.onGithubTokenInput = onGithubTokenInput
+window.continueWithGithub = continueWithGithub
+window.skipGithub = skipGithub
+window.switchTab = switchTab
+window.doLaunch = doLaunch
+window.doSync = doSync
+window.onBranchInput = onBranchInput
+window.doCreateBranch = doCreateBranch
+window.openInCursor = openInCursor
+window.openCursorDownload = openCursorDownload
+window.doScanChanges = doScanChanges
+window.doUpdateSnapshots = doUpdateSnapshots
+window.onCommitInput = onCommitInput
+window.doPushPR = doPushPR
+
+})()
+</script>
+</body>
+</html>

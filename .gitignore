@@ -1,0 +1,10 @@
+node_modules/
+chromium-bundle/
+dist/
+dist-app/
+*.js.map
+.DS_Store
+*.pkg
+*.dmg
+*.zip
+.metamask-designer-setup.json

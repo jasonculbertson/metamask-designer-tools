@@ -1,0 +1,48 @@
+{
+  "name": "metamask-designer-tools",
+  "version": "1.0.0",
+  "description": "Designer workstation for MetaMask — setup, launch, and file PRs",
+  "main": "dist/main.js",
+  "scripts": {
+    "build": "tsc",
+    "start": "npm run build && npx electron .",
+    "dist": "npm run build && electron-builder --mac"
+  },
+  "build": {
+    "appId": "com.metamask.designer-tools",
+    "productName": "MetaMask Designer Tools",
+    "copyright": "MetaMask",
+    "mac": {
+      "category": "public.app-category.developer-tools",
+      "icon": "assets/icon.icns",
+      "target": [
+        { "target": "dmg", "arch": ["arm64"] }
+      ],
+      "hardenedRuntime": false,
+      "gatekeeperAssess": false
+    },
+    "dmg": {
+      "title": "MetaMask Designer Tools",
+      "contents": [
+        { "x": 130, "y": 220 },
+        { "x": 410, "y": 220, "type": "link", "path": "/Applications" }
+      ],
+      "window": { "width": 540, "height": 400 }
+    },
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "dist/*.js",
+      "src/index.html",
+      "assets/icon.icns"
+    ],
+    "asar": true
+  },
+  "devDependencies": {
+    "electron": "^30.0.0",
+    "electron-builder": "^24.0.0",
+    "typescript": "^5.4.0",
+    "@types/node": "^20.0.0"
+  }
+}
